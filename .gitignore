@@ -1,0 +1,37 @@
+*.gz
+*.log
+*.pid
+*.seed
+.grunt
+.lock-wscript
+.next
+.node_repl_history
+.npm
+.nyc_output
+benchmarks/graphs
+build/Release
+coverage
+lib-cov
+logs
+node_modules
+npm-debug.log*
+npm-shrinkwrap.json
+package-lock.json
+pids
+
+# Django
+*.pyc
+__pycache__/
+db-volumes/
+db.sqlite3
+
+# Editor directories and files
+.idea
+.vscode
+*.code-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.env

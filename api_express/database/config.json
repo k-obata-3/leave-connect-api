@@ -1,0 +1,62 @@
+{
+  "development": {
+    "username": "leave_connect",
+    "password": "password",
+    "database": "leave_connect_db",
+    "host": "127.0.0.1",
+    "port": "3308",
+    "dialect": "mysql",
+    "logging": false,
+    "timezone": "+09:00",
+    "define": {
+      "timestamps": false,
+      "createdAt": false,
+      "updatedAt": false
+    },
+    "dialectOptions": {
+    },
+    "pool": {
+      "max": 5
+    }
+  },
+  "test": {
+    "username": "leave_connect",
+    "password": "password",
+    "database": "leave_connect_db",
+    "host": "127.0.0.1",
+    "port": "3308",
+    "dialect": "mysql",
+    "logging": false,
+    "timezone": "+09:00",
+    "define": {
+      "timestamps": false,
+      "createdAt": false,
+      "updatedAt": false
+    },
+    "dialectOptions": {
+    },
+    "pool": {
+      "max": 5
+    }
+  },
+  "production": {
+    "username": "leave_connect",
+    "password": "password",
+    "database": "leave_connect_db",
+    "host": "127.0.0.1",
+    "port": "3308",
+    "dialect": "mysql",
+    "logging": false,
+    "timezone": "+09:00",
+    "define": {
+      "timestamps": false,
+      "createdAt": false,
+      "updatedAt": false
+    },
+    "dialectOptions": {
+    },
+    "pool": {
+      "max": 5
+    }
+  }
+}

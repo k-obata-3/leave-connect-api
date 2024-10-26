@@ -1,0 +1,25 @@
+import { Task } from "./task"
+
+export type Application = {
+  id?: number,
+  applicationUserId?: string,
+  applicationUserName?: string,
+  type?: number,
+  sType?: string,
+  classification?: number,
+  sClassification?: string,
+  applicationDate?: Date,
+  sApplicationDate?: string,
+  startDate?: Date,
+  sStartDate?: string,
+  sStartTime?: string,
+  endDate?: Date,
+  sEndDate?: String,
+  sEndTime?: String,
+  totalTime?: number,
+  approvalGroupId?: number,
+  action?: number,
+  sAction?: string,
+  comment?: string,
+  approvalTtasks?: Task[],
+}
