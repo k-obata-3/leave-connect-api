@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "rest_framework",
     "apis",
-    "accounts",
+    "authentications",
     "application",
     "approval",
     "users",
@@ -80,10 +80,21 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'leave_connect_db',
+        'USER': 'root',
+        'HOST': '',
+        'PORT': '3308',
+        'PASSWORD': 'password',
     }
 }
 
@@ -110,13 +121,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ja'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Tokyo'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -128,3 +139,56 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        }
+    },
+    # 'loggers': {
+    #     'django.db.backends': {
+    #         'level': 'DEBUG',
+    #         'handlers': ['console'],
+    #     },
+    # }
+}
+
+# set-cookieでSecureをtrueに設定する
+# HTTPS接続の場合のみ機能する
+SESSION_COOKIE_SECURE = True
+# set-cookieでSamesSiteをNoneに設定する
+# default='Lax'
+SESSION_COOKIE_SAMESITE = 'None'
+
+CORS_ALLOW_CREDENTIALS = True
+# CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = [
+]
+
+CSRF_TRUSTED_ORIGINS = [
+]
+
+CORS_ALLOW_HEADERS = (
+  'accept',
+  'accept-encoding',
+  'authorization',
+  'content-type',
+  'dnt',
+  'origin',
+  'user-agent',
+  'x-csrftoken',
+  'x-requested-with',
+  'access-control-allow-origin',
+  'access-control-allow-credentials',
+)
+
+# JWT生成 シークレットキー
+JWT_SECRET_KEY = 'aa785c482395933b5fa6535b976653894a10b258209f7f5c43416129a6249774'
+# パスワード シークレットソルト
+PASS_SECRET_SALT = 'Jme4%59N!afJ'
+# JWT生成 アルゴリズム
+JWT_ALGORITHMS = 'HS256'

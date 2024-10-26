@@ -24,6 +24,7 @@ pids
 __pycache__/
 db-volumes/
 db.sqlite3
+migrations/
 
 # Editor directories and files
 .idea
