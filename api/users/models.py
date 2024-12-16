@@ -38,12 +38,12 @@ class UserDetails(BaseModel):
   # 週労働日数
   working_days = models.BigIntegerField(blank=False, null=False, default=0)
   # 消化日数
-  total_delete_days = models.BigIntegerField(blank=False, null=False, default=0)
+  total_delete_days = models.DecimalField(blank=False, null=False, max_digits=5, decimal_places=3, default=0)
   # 付与日数
-  total_add_days = models.BigIntegerField(blank=False, null=False, default=0)
+  total_add_days = models.DecimalField(blank=False, null=False, max_digits=5, decimal_places=3, default=0)
   # 残日数
-  total_remaining_days = models.BigIntegerField(blank=False, null=False, default=0)
+  total_remaining_days = models.DecimalField(blank=False, null=False, max_digits=5, decimal_places=3, default=0)
   # 自動計算残日数
-  auto_calc_remaining_days = models.BigIntegerField(blank=False, null=False, default=0)
+  auto_calc_remaining_days = models.DecimalField(blank=False, null=False, max_digits=5, decimal_places=3, default=0)
   # 繰越日数残日数
-  total_carryover_days = models.BigIntegerField(blank=False, null=False, default=0)
+  total_carryover_days = models.DecimalField(blank=False, null=False, max_digits=5, decimal_places=3, default=0)

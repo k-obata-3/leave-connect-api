@@ -17,7 +17,7 @@ class Application(BaseModel):
   # 区分
   classification = models.BigIntegerField(blank=False, null=False)
   # 申請日時
-  application_date = models.DateTimeField(auto_now_add=True, blank=False, null=False)
+  application_date = models.DateTimeField(blank=False, null=False)
   # 開始日時
   start_date = models.DateTimeField(blank=False, null=False)
   # 終了日時
@@ -48,4 +48,4 @@ class Task(BaseModel):
   # ステータス
   status = models.BigIntegerField(blank=False, null=False)
   # 操作日時
-  application_date = models.DateTimeField(blank=False, null=True)
+  operation_date = models.DateTimeField(blank=False, null=True)

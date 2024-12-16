@@ -24,6 +24,6 @@ class SystemConfigs(BaseModel):
   # 会社ID
   company = models.ForeignKey(Company, on_delete=models.CASCADE)
   # キー
-  name = models.CharField(blank=False, null=False, max_length=255)
+  key = models.CharField(blank=False, null=False, max_length=255)
   # 値
-  name = models.CharField(blank=False, null=False, max_length=10000)
+  value = models.CharField(blank=False, null=False, max_length=10000)

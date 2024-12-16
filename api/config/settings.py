@@ -25,53 +25,57 @@ SECRET_KEY = 'django-insecure-cspujvvbhbas4yxq$)g_&@a!$mr-p2^rj(!l^xp2977y870!ie
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+  '*'
+]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    "rest_framework",
-    "apis",
-    "authentications",
-    "application",
-    "approval",
-    "users",
-    "systemsettings",
+  'django.contrib.admin',
+  'django.contrib.auth',
+  'django.contrib.contenttypes',
+  'django.contrib.sessions',
+  'django.contrib.messages',
+  'django.contrib.staticfiles',
+  "rest_framework",
+  "corsheaders",
+  "apis",
+  "authentications",
+  "application",
+  "approval",
+  "users",
+  "systemsettings",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+  "corsheaders.middleware.CorsMiddleware",
+  'django.middleware.security.SecurityMiddleware',
+  'django.contrib.sessions.middleware.SessionMiddleware',
+  'django.middleware.common.CommonMiddleware',
+  'django.middleware.csrf.CsrfViewMiddleware',
+  'django.contrib.auth.middleware.AuthenticationMiddleware',
+  'django.contrib.messages.middleware.MessageMiddleware',
+  'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
+  {
+    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'DIRS': [],
+    'APP_DIRS': True,
+    'OPTIONS': {
+      'context_processors': [
+        'django.template.context_processors.debug',
+        'django.template.context_processors.request',
+        'django.contrib.auth.context_processors.auth',
+        'django.contrib.messages.context_processors.messages',
+      ],
     },
+  },
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
@@ -81,21 +85,21 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 # DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
+#   'default': {
+#     'ENGINE': 'django.db.backends.sqlite3',
+#     'NAME': BASE_DIR / 'db.sqlite3',
+#   }
 # }
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'leave_connect_db',
-        'USER': 'root',
-        'HOST': '',
-        'PORT': '3308',
-        'PASSWORD': 'password',
-    }
+  'default': {
+    'ENGINE': 'django.db.backends.mysql',
+    'NAME': 'leave_connect_db',
+    'USER': 'root',
+    'HOST': '',
+    'PORT': '3308',
+    'PASSWORD': 'password',
+  }
 }
 
 
@@ -103,18 +107,18 @@ DATABASES = {
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+  {
+    'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+  },
+  {
+    'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+  },
+  {
+    'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+  },
+  {
+    'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+  },
 ]
 
 
@@ -141,32 +145,33 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-        }
-    },
-    # 'loggers': {
-    #     'django.db.backends': {
-    #         'level': 'DEBUG',
-    #         'handlers': ['console'],
-    #     },
-    # }
+  'version': 1,
+  'disable_existing_loggers': False,
+  'handlers': {
+    'console': {
+      'level': 'DEBUG',
+      'class': 'logging.StreamHandler',
+    }
+  },
+  # 'loggers': {
+  #   'django.db.backends': {
+  #     'level': 'DEBUG',
+  #     'handlers': ['console'],
+  #   },
+  # }
 }
 
 # set-cookieでSecureをtrueに設定する
 # HTTPS接続の場合のみ機能する
-SESSION_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
 # set-cookieでSamesSiteをNoneに設定する
 # default='Lax'
-SESSION_COOKIE_SAMESITE = 'None'
+# SESSION_COOKIE_SAMESITE = 'None'
 
-CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOW_CREDENTIALS = True
 # CORS_ORIGIN_ALLOW_ALL = True
 CORS_ORIGIN_WHITELIST = [
+  'http://192.168.0.253:3000'
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -183,12 +188,16 @@ CORS_ALLOW_HEADERS = (
   'x-csrftoken',
   'x-requested-with',
   'access-control-allow-origin',
-  'access-control-allow-credentials',
+  # 'access-control-allow-credentials',
 )
 
 # JWT生成 シークレットキー
 JWT_SECRET_KEY = 'aa785c482395933b5fa6535b976653894a10b258209f7f5c43416129a6249774'
-# パスワード シークレットソルト
-PASS_SECRET_SALT = 'Jme4%59N!afJ'
 # JWT生成 アルゴリズム
 JWT_ALGORITHMS = 'HS256'
+# パスワードハッシュ化 アルゴリズム
+PASS_ALGORITHMS = 'sha1'
+# パスワード シークレットソルト
+PASS_SECRET_SALT = 'TgX7s3nwYPNq'
+# 初期パスワード
+INITIAL_PASSWORD = 'password'
