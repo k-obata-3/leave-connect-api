@@ -8,38 +8,57 @@ from rest_framework.authentication import BaseAuthentication, get_authorization_
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView, UpdateAPIView
-from config.renderers import JSONRenderer
-from config.responseRenderers import ResponseRenderers
-from users.models import User, UserDetails
-from config.utils import Utils
+from rest_framework.generics import RetrieveAPIView
 
+from config.utils import Utils
+from config.responseRenderers import ResponseRenderers
+
+from users.models import User, UserDetails
+
+
+"""
+  パスワード認証
+
+Raises:
+  exceptions.AuthenticationFailed: _description_
+
+Returns:
+  _type_: _description_
+"""
 class NormalAuthentication(BaseAuthentication):
   def authenticate(self, request):
     user_id = request.data.get("user_id")
     password = request.data.get("password")
-    user_obj = User.objects.filter(user_id=user_id).first()
-    print(user_obj.password)
-    print(Utils.getPasswordHash(password, user_id))
-    if not user_obj or user_obj.password != Utils.getPasswordHash(password, user_id):
-      raise exceptions.AuthenticationFailed('認証失敗')
 
-    user_details_obj = UserDetails.objects.filter(user=user_obj.id).first()
-    token = generate_jwt(user_obj, user_details_obj)
+    try:
+      user_obj = User.objects.filter(user_id=user_id, status=settings.USER_EFFECTIVE_STATUS).first()
+      if user_obj is None:
+        raise exceptions.NotAuthenticated('認証失敗')
 
-    user_info = {
-      'id': user_obj.id,
-      'userid': user_obj.user_id,
-      'company_id': user_obj.company.id,
-      'auth': user_details_obj.auth,
-      'first_name': user_details_obj.first_name,
-      'last_name': user_details_obj.last_name,
-    }
+      print(Utils.get_password_hash(password, user_obj))
+      if not user_obj or user_obj.password != Utils.get_password_hash(password, user_obj):
+        raise exceptions.NotAuthenticated('認証失敗')
 
-    return ('jwt ' + token, user_info)
+      user_details_obj = UserDetails.objects.get(user=user_obj.id)
+      token = generate_jwt(user_obj, user_details_obj)
+
+      user_info = {
+        'id': user_obj.id,
+        'userid': user_obj.user_id,
+        'company_id': user_obj.company.id,
+        'auth': user_details_obj.auth,
+        'first_name': user_details_obj.first_name,
+        'last_name': user_details_obj.last_name,
+      }
+
+      return ('jwt ' + token, user_info)
+    except Exception as e:
+      raise e
 
   def authenticate_header(self, request):
-    pass
+    if request.user.is_anonymous:
+      # 'WWW-Authenticate'を返却することで、401となる
+      return 'WWW-Authenticate'
 
 # ドキュメント: https://pyjwt.readthedocs.io/en/latest/usage.html?highlight=exp
 def generate_jwt(user, user_details):
@@ -56,6 +75,16 @@ def generate_jwt(user, user_details):
     settings.JWT_ALGORITHMS
   )
 
+
+"""
+  JWT認証
+
+Raises:
+  exceptions.AuthenticationFailed: _description_
+
+Returns:
+  _type_: _description_
+"""
 class JWTAuthentication(BaseAuthentication):
   keyword = 'JWT'
   model = None
@@ -65,10 +94,10 @@ class JWTAuthentication(BaseAuthentication):
 
     # 認証情報取得失敗 or プレフィックス不一致
     if not auth or auth[0].lower() != self.keyword.lower().encode():
-      raise exceptions.AuthenticationFailed('認証情報取得失敗')
+      raise exceptions.NotAuthenticated('認証情報取得失敗')
 
     if len(auth) == 1 or len(auth) > 2:
-      raise exceptions.AuthenticationFailed('認証情報不正')
+      raise exceptions.NotAuthenticated('認証情報不正')
 
     try:
       jwt_token = auth[1]
@@ -76,8 +105,8 @@ class JWTAuthentication(BaseAuthentication):
       jwt_info = jwt.decode(jwt_token, settings.JWT_SECRET_KEY, settings.JWT_ALGORITHMS)
       user_id = jwt_info.get("user_id")
       try:
-        user = User.objects.get(id=user_id)
-        user_details = UserDetails.objects.filter(user=user.id).first()
+        user = User.objects.get(id=user_id, status=settings.USER_EFFECTIVE_STATUS)
+        user_details = UserDetails.objects.get(user=user.id)
         user.is_authenticated = True
 
         # 権限チェック
@@ -85,19 +114,30 @@ class JWTAuthentication(BaseAuthentication):
 
         return (user, jwt_token)
       except:
-        raise exceptions.AuthenticationFailed('認証失敗')
+        raise exceptions.NotAuthenticated('認証失敗')
 
     except jwt.ExpiredSignatureError:
-      raise exceptions.AuthenticationFailed('有効期間超過')
+      raise exceptions.NotAuthenticated('有効期間超過')
 
   def authenticate_header(self, request):
-    pass
+    if request.user.is_anonymous:
+      # 'WWW-Authenticate'を返却することで、401となる
+      return 'WWW-Authenticate'
 
+
+"""
+  ログイン
+
+Raises:
+  exceptions.AuthenticationFailed: _description_
+
+Returns:
+  _type_: _description_
+"""
 class LoginAPIView(APIView):
   authentication_classes = [NormalAuthentication]
 
   def post(self, request, *args, **kwargs):
-    # user_id = request.data.get("user_id")
     try:
       response = Response()
       response.status_code = status.HTTP_200_OK
@@ -108,27 +148,25 @@ class LoginAPIView(APIView):
       response.data = ResponseRenderers.render(result, response.status_code, None)
     except Exception as e:
       print('【ERROR】:' + traceback.format_exc())
-      # raise exceptions.AuthenticationFailed('Login Failure')
       response = Response()
       response.status_code = status.HTTP_401_UNAUTHORIZED
       response.data = ResponseRenderers.render({}, response.status_code, 'ログイン処理中にエラーが発生しました。')
 
     return response
 
-"""_summary_
+
+"""
+  ログアウト
 
 Raises:
-    exceptions.AuthenticationFailed: _description_
-    exceptions.AuthenticationFailed: _description_
-    exceptions.AuthenticationFailed: _description_
+  exceptions.AuthenticationFailed: _description_
 
 Returns:
-    _type_: _description_
+  _type_: _description_
 """
 class LogoutAPIView(APIView):
   # authentication_classes = [NormalAuthentication]
   # authentication_classes = [JWTAuthentication]
-  # permission_classes = [IsAuthenticated]
 
   def post(self, request, *args, **kwargs):
     try:
@@ -137,7 +175,6 @@ class LogoutAPIView(APIView):
       response.data = ResponseRenderers.render({}, response.status_code, None)
     except Exception as e:
       print('【ERROR】:' + traceback.format_exc())
-      # raise exceptions.AuthenticationFailed('Logout Failure')
       response = Response()
       response.status_code = status.HTTP_401_UNAUTHORIZED
       response.data = ResponseRenderers.render({}, response.status_code, 'ログアウト処理中にエラーが発生しました。')
@@ -145,17 +182,26 @@ class LogoutAPIView(APIView):
     return response
 
 
+"""
+  ログインユーザ情報取得
+
+Raises:
+  exceptions.AuthenticationFailed: _description_
+
+Returns:
+  _type_: _description_
+"""
 class LoginUserInfoRetrieveAPIView(RetrieveAPIView):
   authentication_classes = [JWTAuthentication]
   permission_classes = [IsAuthenticated]
 
   def get(self, request):
     try:
-      user_obj = User.objects.filter(id=request.user.id).first()
-      user_details = UserDetails.objects.filter(user=user_obj.id).first()
+      user_obj = User.objects.get(id=request.user.id, status=settings.USER_EFFECTIVE_STATUS)
+      user_details = UserDetails.objects.get(user=user_obj.id)
 
       if(not user_obj or not user_details):
-        raise exceptions.AuthenticationFailed('ユーザ情報取得失敗')
+        raise exceptions.NotAuthenticated('ユーザ情報取得失敗')
 
       response = Response()
       response.status_code = status.HTTP_200_OK
@@ -170,14 +216,13 @@ class LoginUserInfoRetrieveAPIView(RetrieveAPIView):
         'workingDays': user_details.working_days,
         'totalDeleteDays': user_details.total_delete_days,
         'totalAddDays': user_details.total_add_days,
-        'totalRemainingDays': user_details.total_remaining_days,
-        'autoCalcRemainingDays': user_details.auto_calc_remaining_days,
+        # 残日数 = (繰越日数 + 付与日数) - 取得日数
+        'totalRemainingDays': (user_details.total_carryover_days + user_details.total_add_days) - user_details.total_delete_days,
         'totalCarryoverDays': user_details.total_carryover_days,
       }
       response.data = ResponseRenderers.render(result, response.status_code, None)
     except Exception as e:
       print('【ERROR】:' + traceback.format_exc())
-      # raise exceptions.AuthenticationFailed('ユーザ情報取得失敗')
       response = Response()
       response.status_code = status.HTTP_400_BAD_REQUEST
       response.data = ResponseRenderers.render({}, response.status_code, 'ログインユーザ情報取得中にエラーが発生しました。')

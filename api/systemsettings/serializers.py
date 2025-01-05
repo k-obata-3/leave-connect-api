@@ -5,7 +5,7 @@ from systemsettings.models import SystemConfigs
 class SystemConfigsSerializer(serializers.Serializer):
   class Meta:
     model = SystemConfigs
-    fields = ('id', 'company', 'key', 'value')
+    fields = ('id', 'company', 'key', 'value', 'start_date', 'end_date')
 
   def save(self, validated_data, date_now, user):
     return SystemConfigs.objects.create(

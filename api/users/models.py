@@ -16,7 +16,8 @@ class User(BaseModel):
   user_id = models.CharField(blank=False, null=False, max_length=255)
   # パスワード
   password = models.CharField(blank=False, null=False, max_length=255)
-
+  # ステータス
+  status = models.BigIntegerField(blank=False, null=False, default=1)
 
 """ ユーザ詳細モデル """
 class UserDetails(BaseModel):
@@ -43,7 +44,7 @@ class UserDetails(BaseModel):
   total_add_days = models.DecimalField(blank=False, null=False, max_digits=5, decimal_places=3, default=0)
   # 残日数
   total_remaining_days = models.DecimalField(blank=False, null=False, max_digits=5, decimal_places=3, default=0)
-  # 自動計算残日数
-  auto_calc_remaining_days = models.DecimalField(blank=False, null=False, max_digits=5, decimal_places=3, default=0)
-  # 繰越日数残日数
+  # 繰越日数
   total_carryover_days = models.DecimalField(blank=False, null=False, max_digits=5, decimal_places=3, default=0)
+  # 最終付与日
+  last_grant_date = models.DateTimeField(blank=False, null=True)

@@ -1,12 +1,11 @@
 from rest_framework import serializers
-from config.models import BaseModel
 from application.models import Application, Task
-from config.enum import TaskType, TaskStatus, TaskAction, ApplicationClassification, ApplicationType
+from config.enum import TaskType
 
 class ApplicationSerializer(serializers.Serializer):
   class Meta:
     model = Application
-    fields = ('id', 'user_id', 'type', 'classification', 'application_date', 'start_date', 'end_date', 'total_time', 'approval_group_id')
+    fields = ('id', 'user_id', 'type', 'classification', 'application_date', 'start_date', 'end_date', 'total_time', 'approval_group_id', 'remarks')
 
   def save(self, validated_data, date_now, user):
     return Application.objects.create(
@@ -18,6 +17,7 @@ class ApplicationSerializer(serializers.Serializer):
       end_date = validated_data.get('end_date'),
       total_time = validated_data.get('total_time'),
       approval_group_id = validated_data.get('approval_group_id'),
+      remarks = validated_data.get('remarks'),
       version = 1,
       created_date = date_now,
       created_user = user.id,
@@ -34,6 +34,7 @@ class ApplicationSerializer(serializers.Serializer):
     instance.end_date = validated_data.get('end_date', instance.end_date)
     instance.total_time = validated_data.get('total_time', instance.total_time)
     instance.approval_group_id = validated_data.get('approval_group_id', instance.approval_group_id)
+    instance.remarks = validated_data.get('remarks', instance.remarks)
     instance.version = instance.version + 1
     instance.updated_date = date_now
     instance.save()

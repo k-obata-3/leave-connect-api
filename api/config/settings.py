@@ -201,3 +201,7 @@ PASS_ALGORITHMS = 'sha1'
 PASS_SECRET_SALT = 'TgX7s3nwYPNq'
 # 初期パスワード
 INITIAL_PASSWORD = 'password'
+# 年次有給休暇申請タイプ値
+PAID_HOLIDAY_VALUE = 0
+# 有効なユーザのステータス
+USER_EFFECTIVE_STATUS = 1

@@ -2,8 +2,8 @@ from django.urls import path
 from authentications.views import LoginAPIView, LogoutAPIView, LoginUserInfoRetrieveAPIView
 from application.views import NotificationRetrieveAPIView, ApplicationMonthListAPIView, ApplicationListAPIView, ApplicationRetrieveAPIView, ApplicationAPIView, ApplicationDestroyAPIView, ApplicationCancelAPIView
 from approval.views import ApproveListAPIView, ApproveAPIView
-from systemsettings.views import SystemConfigsRetrieveAPIView, SystemConfigsDestroyAPIView, ApprovalGroupListAPIView, ApprovalGroupAPIView
-from users.views import UserListAPIView, UserDetailsRetrieveAPIView, UserNameListAPIView, UpdateUserAPIView, UpdateGrantDaysAPIView, ChangePasswordAPIView
+from systemsettings.views import SystemConfigsRetrieveAPIView, SystemConfigsDestroyAPIView, ApprovalGroupListAPIView, ApprovalGroupAPIView, ApplicationTypeListAPIView
+from users.views import UserListAPIView, UserDetailsRetrieveAPIView, UserNameListAPIView, UpdateUserAPIView, GetGrantDaysRetrieveAPIView, UpdateGrantDaysAPIView, ChangePasswordAPIView
 
 urlpatterns = [
   # ログイン
@@ -35,9 +35,11 @@ urlpatterns = [
   # システム設定情報削除
   path(r'systemConfig/delete', SystemConfigsDestroyAPIView.as_view()),
   # 承認グループ一覧取得
-  path(r'systemConfig/approvalGroup', ApprovalGroupListAPIView.as_view()),
+  path(r'systemConfig/approvalGroup/list', ApprovalGroupListAPIView.as_view()),
   # 承認グループ登録/更新
-  path(r'systemConfig/save/approvalGroup', ApprovalGroupAPIView.as_view()),
+  path(r'systemConfig/approvalGroup/save', ApprovalGroupAPIView.as_view()),
+  # 申請タイプ設定取得
+  path(r'systemConfig/applicationType/list', ApplicationTypeListAPIView.as_view()),
   # ユーザ一覧取得
   path(r'user/list', UserListAPIView.as_view()),
   # ユーザ情報取得
@@ -46,6 +48,8 @@ urlpatterns = [
   path(r'userName/list', UserNameListAPIView.as_view()),
   # ユーザ情報更新
   path(r'user/save', UpdateUserAPIView.as_view()),
+  # 付与日数取得
+  path(r'user/grantDays', GetGrantDaysRetrieveAPIView.as_view()),
   # 付与日数更新
   path(r'user/updateGrantDays', UpdateGrantDaysAPIView.as_view()),
   # パスワード変更

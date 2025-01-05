@@ -26,6 +26,8 @@ class Application(BaseModel):
   total_time = models.BigIntegerField(blank=False, null=False)
   # 承認グループID
   approval_group_id = models.BigIntegerField(blank=False, null=False)
+  # 備考
+  remarks = models.CharField(blank=False, null=True, max_length=1000)
 
 
 """ タスクモデル """

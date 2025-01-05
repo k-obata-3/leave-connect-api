@@ -27,3 +27,7 @@ class SystemConfigs(BaseModel):
   key = models.CharField(blank=False, null=False, max_length=255)
   # 値
   value = models.CharField(blank=False, null=False, max_length=10000)
+  # 開始日
+  start_date = models.DateTimeField(blank=False, null=True)
+  # 終了日
+  end_date = models.DateTimeField(blank=False, null=True)
