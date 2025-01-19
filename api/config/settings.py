@@ -47,6 +47,7 @@ INSTALLED_APPS = [
   "approval",
   "users",
   "systemsettings",
+  "career",
 ]
 
 MIDDLEWARE = [
@@ -205,3 +206,7 @@ INITIAL_PASSWORD = 'password'
 PAID_HOLIDAY_VALUE = 0
 # 有効なユーザのステータス
 USER_EFFECTIVE_STATUS = 1
+# スキル管理シート出力フォルダ
+CAREER_SHEET_OUTPUT_DIR_PATH = 'temp'
+# スキルシ管理シートプレフィックス
+CAREER_SHEET_PREFIX = '/スキル表_'

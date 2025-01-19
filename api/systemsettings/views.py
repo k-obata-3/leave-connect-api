@@ -4,7 +4,6 @@ from django.db import transaction
 from rest_framework import status
 from rest_framework import exceptions
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, RetrieveAPIView, DestroyAPIView
 
@@ -12,7 +11,7 @@ from config.utils import Utils
 from config.jsonEncoder import JsonEncoder
 from config.responseRenderers import ResponseRenderers
 
-from authentications.views import JWTAuthentication
+from authentications.views import JWTAuthentication, IsAuthenticated
 
 from users.models import UserDetails
 from systemsettings.models import SystemConfigs
@@ -31,7 +30,7 @@ Returns:
 """
 class SystemConfigsRetrieveAPIView(RetrieveAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def get(self, request):
     key = self.request.GET.get('key')
@@ -104,7 +103,7 @@ Returns:
 """
 class ApprovalGroupListAPIView(ListAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def get(self, request):
     try:
@@ -191,14 +190,14 @@ class ApprovalGroupAPIView(APIView):
           if serializer.is_valid():
             serializer.save(req, date_now, request.user)
           else:
-            raise exceptions.APIException(serializer.error_messages['invalid'])
+            raise exceptions.APIException(serializer.errors)
         else:
           system_configs_obj = SystemConfigs.objects.select_for_update().filter(pk=id, company=request.user.company, key='approvalGroup').first()
           serializer = SystemConfigsSerializer(system_configs_obj, data=req)
           if serializer.is_valid():
             serializer.update(system_configs_obj, req, date_now, request.user)
           else:
-            raise exceptions.APIException(serializer.error_messages['invalid'])
+            raise exceptions.APIException(serializer.errors)
 
       result = {}
       response = Response()
@@ -221,7 +220,7 @@ Returns:
 """
 class ApplicationTypeListAPIView(ListAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def get(self, request):
     try:

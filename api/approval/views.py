@@ -5,7 +5,6 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework import exceptions
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 
@@ -35,8 +34,7 @@ Returns:
 """
 class ApproveListAPIView(ListAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
-  serializer_class = TaskSerializer
+  permission_classes = []
 
   def get(self, request):
     param_search_user_id = self.request.GET.get('searchUserId')
@@ -135,7 +133,7 @@ Returns:
 """
 class ApproveAPIView(APIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def post(self, request):
     application_id = request.data['application_id']
@@ -181,7 +179,7 @@ class ApproveAPIView(APIView):
 
         approve_task_serializer = TaskSerializer(approve_task_req, data=approve_task_req)
         if not approve_task_serializer.is_valid():
-          raise exceptions.APIException(approve_task_serializer.error_messages['invalid'])
+          raise exceptions.APIException(approve_task_serializer.errors)
 
         if approve_task_req['action'] == TaskAction['APPROVAL'].value:
           # 承認操作の場合
@@ -205,7 +203,7 @@ class ApproveAPIView(APIView):
           }
           application_task_serializer = TaskSerializer(application_task_req, data=application_task_req)
           if not application_task_serializer.is_valid():
-            raise exceptions.APIException(application_task_serializer.error_messages['invalid'])
+            raise exceptions.APIException(application_task_serializer.errors)
 
           # 承認タスクを「差戻」で更新
           approve_task_serializer.update_approval_task(approval_task, approve_task_req, date_now, request.user, True)
@@ -222,7 +220,7 @@ class ApproveAPIView(APIView):
 
               other_approval_task_serializer = TaskSerializer(approve_task_req, data=approve_task_req)
               if not other_approval_task_serializer.is_valid():
-                raise exceptions.APIException(other_approval_task_serializer.error_messages['invalid'])
+                raise exceptions.APIException(other_approval_task_serializer.errors)
 
               other_approval_task_serializer.update_approval_task(approval_task, other_approval_task_req, date_now, request.user, False)
 
@@ -251,7 +249,7 @@ class ApproveAPIView(APIView):
     }
     serializer = TaskSerializer(task, data=task_req)
     if not serializer.is_valid():
-      raise exceptions.APIException(serializer.error_messages['invalid'])
+      raise exceptions.APIException(serializer.errors)
 
     serializer.update_approval_task(task, task_req, date_now, self.request.user, False)
 
@@ -284,7 +282,7 @@ class ApproveAPIView(APIView):
 
       serializer = TaskSerializer(task, data=task_req)
       if not serializer.is_valid():
-        raise exceptions.APIException(serializer.error_messages['invalid'])
+        raise exceptions.APIException(serializer.errors)
 
       serializer.update_approval_task(task, task_req, date_now, self.request.user, task.id == approval_task_id)
 
@@ -305,7 +303,7 @@ class ApproveAPIView(APIView):
 
     serializer = UserDetailsSerializer(user_details_obj, data=req)
     if not serializer.is_valid():
-      raise exceptions.APIException(serializer.error_messages['invalid'])
+      raise exceptions.APIException(serializer.errors)
 
     serializer.update(user_details_obj, req, date_now, self.request.user)
 

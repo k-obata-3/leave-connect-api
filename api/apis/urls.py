@@ -4,6 +4,7 @@ from application.views import NotificationRetrieveAPIView, ApplicationMonthListA
 from approval.views import ApproveListAPIView, ApproveAPIView
 from systemsettings.views import SystemConfigsRetrieveAPIView, SystemConfigsDestroyAPIView, ApprovalGroupListAPIView, ApprovalGroupAPIView, ApplicationTypeListAPIView
 from users.views import UserListAPIView, UserDetailsRetrieveAPIView, UserNameListAPIView, UpdateUserAPIView, GetGrantDaysRetrieveAPIView, UpdateGrantDaysAPIView, ChangePasswordAPIView
+from career.views import CareerListAPIView, CareerRetrieveAPIView, CareerDicRetrieveAPIView, SaveCareerAPIView, CareerDestroyAPIView, CareerItemMasterListAPIView, SaveMasterCreateAPIView, CareerMasterDestroyAPIView, CareerOutputAPIView
 
 urlpatterns = [
   # ログイン
@@ -24,7 +25,7 @@ urlpatterns = [
   path(r'application/save', ApplicationAPIView.as_view()),
   # 申請情報削除
   path(r'application/delete', ApplicationDestroyAPIView.as_view()),
-  # 申請情報取消
+  # 申請情報取消（管理者権限あり）
   path(r'application/cancel', ApplicationCancelAPIView.as_view()),
   # 承認一覧取得
   path(r'approval/task/list', ApproveListAPIView.as_view()),
@@ -32,11 +33,11 @@ urlpatterns = [
   path(r'approval/approve', ApproveAPIView.as_view()),
   # システム設定情報取得
   path(r'systemConfigs', SystemConfigsRetrieveAPIView.as_view()),
-  # システム設定情報削除
+  # システム設定情報削除（管理者権限あり）
   path(r'systemConfig/delete', SystemConfigsDestroyAPIView.as_view()),
   # 承認グループ一覧取得
   path(r'systemConfig/approvalGroup/list', ApprovalGroupListAPIView.as_view()),
-  # 承認グループ登録/更新
+  # 承認グループ登録/更新（管理者権限あり）
   path(r'systemConfig/approvalGroup/save', ApprovalGroupAPIView.as_view()),
   # 申請タイプ設定取得
   path(r'systemConfig/applicationType/list', ApplicationTypeListAPIView.as_view()),
@@ -46,12 +47,27 @@ urlpatterns = [
   path(r'userDetails', UserDetailsRetrieveAPIView.as_view()),
   # ユーザ名一覧取得
   path(r'userName/list', UserNameListAPIView.as_view()),
-  # ユーザ情報更新
+  # ユーザ情報更新（管理者権限あり）
   path(r'user/save', UpdateUserAPIView.as_view()),
-  # 付与日数取得
+  # 付与日数取得（管理者権限あり）
   path(r'user/grantDays', GetGrantDaysRetrieveAPIView.as_view()),
-  # 付与日数更新
+  # 付与日数更新（管理者権限あり）
   path(r'user/updateGrantDays', UpdateGrantDaysAPIView.as_view()),
   # パスワード変更
   path(r'changePassword', ChangePasswordAPIView.as_view()),
+  # 経歴情報一覧取得
+  path(r'career/list', CareerListAPIView.as_view()),
+  # 経歴情報取得
+  path(r'career', CareerRetrieveAPIView.as_view()),
+  # 経歴情報保存
+  path(r'career/save', SaveCareerAPIView.as_view()),
+  # 経歴情報保存
+  path(r'career/delete', CareerDestroyAPIView.as_view()),
+  # 経歴情報マスタ項目取得
+  path(r'career/itemMaster', CareerItemMasterListAPIView.as_view()),
+  # 経歴情報マスタ項目登録（管理者権限あり）
+  path(r'career/itemMaster/save', SaveMasterCreateAPIView.as_view()),
+  # 経歴情報マスタ項目削除（管理者権限あり）
+  path(r'career/itemMaster/delete', CareerMasterDestroyAPIView.as_view()),
+
 ]

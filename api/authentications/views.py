@@ -5,6 +5,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework import exceptions
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
+from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -125,6 +126,11 @@ class JWTAuthentication(BaseAuthentication):
       return 'WWW-Authenticate'
 
 
+
+class IsAuthenticated(BasePermission):
+  def has_permission(self, request, view):
+    return bool(request.user and request.user.is_admin)
+
 """
   ログイン
 
@@ -165,8 +171,6 @@ Returns:
   _type_: _description_
 """
 class LogoutAPIView(APIView):
-  # authentication_classes = [NormalAuthentication]
-  # authentication_classes = [JWTAuthentication]
 
   def post(self, request, *args, **kwargs):
     try:
@@ -193,7 +197,7 @@ Returns:
 """
 class LoginUserInfoRetrieveAPIView(RetrieveAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def get(self, request):
     try:

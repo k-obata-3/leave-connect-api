@@ -6,7 +6,6 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework import exceptions
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, RetrieveAPIView, DestroyAPIView
 
@@ -15,7 +14,7 @@ from config.jsonEncoder import JsonEncoder
 from config.responseRenderers import ResponseRenderers
 from config.enum import TaskType, TaskStatus, TaskStatusName, TaskAction, TaskActionName
 
-from authentications.views import JWTAuthentication
+from authentications.views import JWTAuthentication, IsAuthenticated
 
 from users.models import UserDetails
 from systemsettings.models import SystemConfigs
@@ -38,7 +37,7 @@ Returns:
 """
 class NotificationRetrieveAPIView(RetrieveAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def get(self, request):
     try:
@@ -81,8 +80,7 @@ Returns:
 """
 class ApplicationMonthListAPIView(ListAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
-  serializer_class = TaskSerializer
+  permission_classes = []
 
   def get(self, request):
     start = self.request.GET.get('start')
@@ -157,14 +155,14 @@ Returns:
 """
 class ApplicationListAPIView(ListAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
-  serializer_class = TaskSerializer
+  permission_classes = []
 
   def get(self, request):
     param_is_admin = self.request.GET.get('isAdmin')
     param_user_id = self.request.GET.get('userId')
     param_search_action = self.request.GET.get('searchAction')
     param_search_year = self.request.GET.get('searchYear')
+    param_search_type = self.request.GET.get('searchType')
     limit = self.request.GET.get('limit')
     ofset = self.request.GET.get('offset')
 
@@ -202,6 +200,10 @@ class ApplicationListAPIView(ListAPIView):
       else:
         if is_admin:
           where_params['action__in'] = [TaskAction['PANDING'].value, TaskAction['COMPLETE'].value, TaskAction['REJECT'].value, TaskAction['CANCEL'].value]
+
+      # 検索条件 申請種類
+      if param_search_type:
+        where_params['application__type'] = param_search_type
 
       date_now = Utils.get_now_to_datetime()
       start_str = date_now.strftime('%Y-%m-%d')
@@ -263,7 +265,7 @@ Returns:
 """
 class ApplicationRetrieveAPIView(RetrieveAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def get(self, request):
     application_id = self.request.GET.get('applicationId')
@@ -418,7 +420,7 @@ Returns:
 """
 class ApplicationAPIView(APIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def post(self, request):
     if not 'startDate' in request.data:
@@ -502,7 +504,7 @@ class ApplicationAPIView(APIView):
         if req_classification == TIME and is_all_days:
           raise exceptions.ValidationError('取得時間が不正です。※取得時間が区分「時間単位」の条件を満たしていません。')
 
-      date_now = date_now = Utils.get_now_to_string()
+      date_now = Utils.get_now_to_string()
       application_req = {
         'id': application_id,
         'user': request.user.id,
@@ -554,13 +556,13 @@ class ApplicationAPIView(APIView):
            new_application = application_serializer.save(application_req, date_now, request.user)
           else:
             is_update_application_date = application_task_req['action'] == str(TaskAction['PANDING'].value)
-            new_application = application_serializer.update(application, application_req, date_now, is_update_application_date)
+            new_application = application_serializer.update(application, application_req, date_now, request.user, is_update_application_date)
         else:
-          raise exceptions.APIException(application_serializer.error_messages['invalid'])
+          raise exceptions.APIException(application_serializer.errors)
 
         application_task = Task.objects.select_for_update().filter(application=application_id, type=TaskType['APPLICATION'].value, action__in=[TaskAction['DRAFT'].value, TaskAction['REJECT'].value], status=TaskStatus['ACTIVE'].value).first()
         if not application_task_serializer.is_valid():
-          raise exceptions.APIException(application_task_serializer.error_messages['invalid'])
+          raise exceptions.APIException(application_task_serializer.errors)
 
         # 申請タスクの登録/更新
         if not application_task or application_task.action == TaskAction['REJECT'].value:
@@ -605,7 +607,7 @@ class ApplicationAPIView(APIView):
     }
     serializer = TaskSerializer(application_reject_task, data=task_req)
     if not serializer.is_valid():
-      raise exceptions.APIException(serializer.error_messages['invalid'])
+      raise exceptions.APIException(serializer.errors)
 
     serializer.update_application_task(application_reject_task, task_req, date_now, self.request.user, False)
     return
@@ -620,7 +622,7 @@ class ApplicationAPIView(APIView):
     for task in tasks:
       serializer = TaskSerializer(task, data=task_req)
       if not serializer.is_valid():
-        raise exceptions.APIException(serializer.error_messages['invalid'])
+        raise exceptions.APIException(serializer.errors)
 
       serializer.update_approval_task(task, task_req, date_now, self.request.user, False)
     return
@@ -643,7 +645,7 @@ class ApplicationAPIView(APIView):
       }
       serializer = TaskSerializer(task_req, data=task_req)
       if not serializer.is_valid():
-        raise exceptions.APIException(serializer.error_messages['invalid'])
+        raise exceptions.APIException(serializer.errors)
 
       serializer.save_approval_task(task_req, date_now, self.request.user)
     return
@@ -661,7 +663,7 @@ Returns:
 """
 class ApplicationDestroyAPIView(DestroyAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def destroy(self, request):
     id = self.request.GET.get('id')
@@ -720,7 +722,7 @@ class ApplicationCancelAPIView(APIView):
         if not application_task_obj:
           raise exceptions.APIException('取消に失敗しました。')
 
-        date_now = date_now = Utils.get_now_to_string()
+        date_now = Utils.get_now_to_string()
         # 申請タスクを取消
         task_req = {
           'application_id': application_task_obj.application.id,
@@ -731,7 +733,7 @@ class ApplicationCancelAPIView(APIView):
         }
         serializer = TaskSerializer(task_req, data=task_req)
         if not serializer.is_valid():
-          raise exceptions.APIException(serializer.error_messages['invalid'])
+          raise exceptions.APIException(serializer.errors)
 
         serializer.update_application_task(application_task_obj, task_req, date_now, self.request.user, False)
 
@@ -747,7 +749,7 @@ class ApplicationCancelAPIView(APIView):
 
         cancel_task_serializer = TaskSerializer(cancel_task_req, data=cancel_task_req)
         if not cancel_task_serializer.is_valid():
-          raise exceptions.APIException(cancel_task_serializer.error_messages['invalid'])
+          raise exceptions.APIException(cancel_task_serializer.errors)
 
         cancel_task_serializer.save_approval_task(cancel_task_req, date_now, self.request.user)
 
@@ -776,7 +778,7 @@ class ApplicationCancelAPIView(APIView):
     }
     serializer = UserDetailsSerializer(user_details_obj, data=req)
     if not serializer.is_valid():
-      raise exceptions.APIException(serializer.error_messages['invalid'])
+      raise exceptions.APIException(serializer.errors)
 
     serializer.update(user_details_obj, req, date_now, self.request.user)
 

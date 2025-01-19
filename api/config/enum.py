@@ -40,3 +40,17 @@ class TaskActionName(Enum):
   REJECT = '差戻'
   CANCEL = '取消'
   SYSTEM_CANCEL = 'システム取消'
+
+"""_summary_
+"""
+class CareerItemKey(Enum):
+  MODEL = 'model'
+  OS = 'os'
+  DATA_BASE = 'database'
+  LANGUAGE = 'language'
+  FRAMEWORK = 'framework'
+  TOOL = 'tool'
+  INCHARGE = 'incharge'
+  ROLE = 'role'
+  OTHER = 'other'
+  KEY_LIST = [MODEL, OS, DATA_BASE, LANGUAGE, FRAMEWORK, TOOL, INCHARGE, ROLE, OTHER]

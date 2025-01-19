@@ -31,7 +31,7 @@ class Utils():
     if password is None or user is None:
       return ''
 
-    raw = password + settings.PASS_SECRET_SALT + str(user.company_id) + str(user.id)
+    raw = password + settings.PASS_SECRET_SALT + str(user.company.id) + str(user.id)
     return hashlib.sha1(raw.encode()).hexdigest()
 
   # 経過年数取得(初日を含まない)

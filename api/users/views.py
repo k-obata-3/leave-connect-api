@@ -8,7 +8,6 @@ from django.db import transaction
 from rest_framework import status
 from rest_framework import exceptions
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
@@ -17,7 +16,7 @@ from config.jsonEncoder import JsonEncoder
 from config.responseRenderers import ResponseRenderers
 from config.enum import TaskType, TaskStatus, TaskAction
 
-from authentications.views import JWTAuthentication
+from authentications.views import JWTAuthentication, IsAuthenticated
 
 from users.models import User, UserDetails
 from systemsettings.models import SystemConfigs
@@ -37,7 +36,7 @@ Returns:
 """
 class UserListAPIView(ListAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def get(self, request):
     limit = self.request.GET.get('limit')
@@ -61,7 +60,7 @@ class UserListAPIView(ListAPIView):
         user['isUpdateGrant'] = False
 
         # 基準日から現在日時までの通算月数を算出する(現在日時 - 基準日)
-        # 算出した通算月数が0以上の場合、継続勤続期間が6ヶ月以上と見做す
+        # 算出した通算月数が0以上の場合、継続勤続期間が規定月数以上と見做す
         passedyears = Utils.get_service_years(obj.reference_date, date_now)
         if passedyears[1] >= 0:
           # 現在年に換算した付与対象期間の開始日、終了日を算出する
@@ -99,7 +98,7 @@ Returns:
 """
 class UserDetailsRetrieveAPIView(RetrieveAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def get(self, request):
     id = self.request.GET.get('id') if self.request.GET.get('id') else request.user.id
@@ -132,7 +131,7 @@ Returns:
 """
 class UserNameListAPIView(ListAPIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def get(self, request):
     try:
@@ -209,7 +208,7 @@ class UpdateUserAPIView(APIView):
         if serializer.is_valid():
           serializer.update(user_details_obj, req, date_now, request.user)
         else:
-          raise exceptions.APIException(serializer.error_messages['invalid'])
+          raise exceptions.APIException(serializer.errors)
 
         result_user_details = UserDetails.objects.get(user=user_id)
 
@@ -245,8 +244,6 @@ class GetGrantDaysRetrieveAPIView(RetrieveAPIView):
     if not id:
       raise exceptions.APIException('Invalid Parameter:id')
 
-    HALF_YEAR_MONTH = 6
-    YEAR_MONTH = 12
     try:
       warnings = []
       valid_errors= []
@@ -260,7 +257,7 @@ class GetGrantDaysRetrieveAPIView(RetrieveAPIView):
       user_details_obj = UserDetails.objects.get(user_id=id)
 
       # 基準日から現在日時までの通算月数を算出する(現在日時 - 基準日)
-      # 算出した通算月数が0以上の場合、継続勤続期間が6ヶ月以上と見做す
+      # 算出した通算月数が0以上の場合、継続勤続期間が規定月数以上と見做す
       passedyears = Utils.get_service_years(user_details_obj.reference_date, date_now)
       is_total_service_year_half_over = passedyears[1] >= 0
 
@@ -269,7 +266,14 @@ class GetGrantDaysRetrieveAPIView(RetrieveAPIView):
       period_start = grant_period[0]
       period_end = grant_period[1]
 
-      # 継続勤続期間が6ヶ月以上の場合
+      # 付与ルールを取得する
+      start_str = date_now.strftime('%Y-%m-%d')
+      end_str = date_now.strftime('%Y-%m-%d')
+      start_end_exp = Q(Q(start_date__isnull=True, end_date__isnull=True) | Q(start_date__gte=f'{start_str} 00:00:00', end_date__lte=f'{end_str} 23:59:59'))
+      system_configs_obj = SystemConfigs.objects.get(start_end_exp, company=request.user.company, key='grantRule')
+      grantRule = JsonEncoder.toJson(system_configs_obj.value)
+
+      # 継続勤続期間が規定月数以上の場合
       if is_total_service_year_half_over:
         # 最終更新日から対象期間内の更新有無をチェック
         if is_update_grant_date(user_details_obj.last_grant_date, period_start, period_end):
@@ -293,13 +297,6 @@ class GetGrantDaysRetrieveAPIView(RetrieveAPIView):
         if application_task_obj:
           warnings.append('未完了(承認待ち、差戻)の申請情報が存在します。')
           warnings.append('※期間: ' + period_start_str.replace('-', '/') + ' ～ ' + period_end_str.replace('-', '/') + '、申請ID: ' + str(list(application_task_obj.values_list('application__id', flat=True))))
-
-        # 付与ルールを取得する
-        start_str = date_now.strftime('%Y-%m-%d')
-        end_str = date_now.strftime('%Y-%m-%d')
-        start_end_exp = Q(Q(start_date__isnull=True, end_date__isnull=True) | Q(start_date__gte=f'{start_str} 00:00:00', end_date__lte=f'{end_str} 23:59:59'))
-        system_configs_obj = SystemConfigs.objects.get(start_end_exp, company=request.user.company, key='grantRule')
-        grantRule = JsonEncoder.toJson(system_configs_obj.value)
 
         # 経過月数から該当付与ルールのインデックスを取得する
         grant_rule_index = 0
@@ -329,7 +326,7 @@ class GetGrantDaysRetrieveAPIView(RetrieveAPIView):
         # 繰越日数 + 付与ルールから取得した規定付与日数
         total_remaining_days_after_value = total_carryover_days_after_value + int(grant_rule_add_days)
       else:
-        valid_errors.append('継続勤続期間が6ヶ月未満のため付与対象外です。')
+        valid_errors.append('継続勤続期間が規定月数未満のため付与対象外です。')
 
       GRANT_DAYS = ['取得日数', '残日数', '繰越日数', '付与日数']
       # 更新前　残日数　※(繰越日数 + 付与日数) - 取得日数
@@ -342,7 +339,8 @@ class GetGrantDaysRetrieveAPIView(RetrieveAPIView):
       ]
 
       # 継続勤続期間を取得する
-      # 基準日(reference_date)は、6ヶ月が加算されている前提なので、通算月数を算出するために6ヶ月減算した日付をもとに計算する
+      # 基準日(reference_date)は、規定月数が加算されている前提なので、通算月数を算出するために規定月数を減算した日付をもとに計算する
+      HALF_YEAR_MONTH = int(grantRule['sectionMonth'][0])
       total_service = None
       total_service_months = Utils.get_service_years(Utils.sub_month(user_details_obj.reference_date, HALF_YEAR_MONTH), date_now)
       if total_service_months[1] >= 0:
@@ -426,7 +424,7 @@ class UpdateGrantDaysAPIView(APIView):
         if serializer.is_valid():
           serializer.update(user_details_obj, req, date_now, request.user)
         else:
-          raise exceptions.APIException(serializer.error_messages['invalid'])
+          raise exceptions.APIException(serializer.errors)
 
         result_user_details = UserDetails.objects.get(user=userId)
 
@@ -458,7 +456,7 @@ Returns:
 """
 class ChangePasswordAPIView(APIView):
   authentication_classes = [JWTAuthentication]
-  permission_classes = [IsAuthenticated]
+  permission_classes = []
 
   def post(self, request):
     if not 'oldPassword' in request.data:
@@ -472,18 +470,18 @@ class ChangePasswordAPIView(APIView):
     try:
       with transaction.atomic():
         user_obj = User.objects.select_for_update().get(id=request.user.id)
-        if user_obj.password != Utils.get_password_hash(old_password, user_obj.user_id):
+        if user_obj.password != Utils.get_password_hash(old_password, user_obj):
           raise exceptions.ValidationError('パスワードの照合に失敗しました。')
 
         req = {
-          'password': Utils.get_password_hash(new_password, user_obj.user_id)
+          'password': Utils.get_password_hash(new_password, user_obj)
         }
         date_now = Utils.get_now_to_string()
         serializer = UserSerializer(user_obj, data=req)
         if serializer.is_valid():
           serializer.update(user_obj, req, date_now, request.user)
         else:
-          raise exceptions.APIException(serializer.error_messages['invalid'])
+          raise exceptions.APIException(serializer.errors)
 
       result = {}
       response = Response()

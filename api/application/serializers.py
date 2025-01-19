@@ -25,7 +25,7 @@ class ApplicationSerializer(serializers.Serializer):
       updated_user = user.id,
     )
 
-  def update(self, instance, validated_data, date_now, is_update_application_date):
+  def update(self, instance, validated_data, date_now, user, is_update_application_date):
     instance.type = validated_data.get('type', instance.type)
     instance.classification = validated_data.get('classification', instance.classification)
     if is_update_application_date:
@@ -37,6 +37,7 @@ class ApplicationSerializer(serializers.Serializer):
     instance.remarks = validated_data.get('remarks', instance.remarks)
     instance.version = instance.version + 1
     instance.updated_date = date_now
+    instance.updated_user = user.id
     instance.save()
     return instance
 

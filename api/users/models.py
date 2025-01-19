@@ -7,6 +7,7 @@ from systemsettings.models import Company
 class User(BaseModel):
   class Meta:
     db_table = "user"
+    constraints = [models.UniqueConstraint(fields=["company", "user_id"], name="user_unique")]
 
   # ID
   id = models.BigAutoField(primary_key=True)
