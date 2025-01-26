@@ -33,10 +33,18 @@ class UserDetails(BaseModel):
   first_name = models.CharField(blank=False, null=False, max_length=100)
   # 姓
   last_name = models.CharField(blank=False, null=False, max_length=100)
+  # 名(カナ)
+  first_name_kana = models.CharField(blank=False, null=False, max_length=100)
+  # 姓(カナ)
+  last_name_kana = models.CharField(blank=False, null=False, max_length=100)
+  # 生年月日
+  date_of_birth = models.DateField(blank=False, null=False)
   # 権限
   auth = models.BigIntegerField(blank=False, null=False, default=0)
+  # 入社日
+  joining_date = models.DateField(blank=False, null=False)
   # 基準日
-  reference_date = models.DateTimeField(blank=False, null=False)
+  reference_date = models.DateField(blank=False, null=False)
   # 週労働日数
   working_days = models.BigIntegerField(blank=False, null=False, default=0)
   # 消化日数

@@ -1,6 +1,6 @@
 import traceback
 import json
-import datetime
+from datetime import datetime, time
 import math
 from decimal import Decimal
 from django.db.models import Q
@@ -61,10 +61,11 @@ class UserListAPIView(ListAPIView):
 
         # 基準日から現在日時までの通算月数を算出する(現在日時 - 基準日)
         # 算出した通算月数が0以上の場合、継続勤続期間が規定月数以上と見做す
-        passedyears = Utils.get_service_years(obj.reference_date, date_now)
+        reference_date_time = datetime.combine(obj.reference_date, time())
+        passedyears = Utils.get_affiliation_period(reference_date_time, date_now)
         if passedyears[1] >= 0:
           # 現在年に換算した付与対象期間の開始日、終了日を算出する
-          grant_period = getGrantPeriod(obj.reference_date, passedyears[1])
+          grant_period = getGrantPeriod(reference_date_time, passedyears[1])
           period_start = grant_period[0]
           period_end = grant_period[1]
           is_update_grant = is_update_grant_date(obj.last_grant_date, period_start, period_end)
@@ -258,11 +259,12 @@ class GetGrantDaysRetrieveAPIView(RetrieveAPIView):
 
       # 基準日から現在日時までの通算月数を算出する(現在日時 - 基準日)
       # 算出した通算月数が0以上の場合、継続勤続期間が規定月数以上と見做す
-      passedyears = Utils.get_service_years(user_details_obj.reference_date, date_now)
+      reference_date_time = datetime.combine(user_details_obj.reference_date, time())
+      passedyears = Utils.get_affiliation_period(reference_date_time, date_now)
       is_total_service_year_half_over = passedyears[1] >= 0
 
       # 現在年に換算した付与対象期間の開始日、終了日を算出する
-      grant_period = getGrantPeriod(user_details_obj.reference_date, passedyears[1])
+      grant_period = getGrantPeriod(reference_date_time, passedyears[1])
       period_start = grant_period[0]
       period_end = grant_period[1]
 
@@ -342,7 +344,7 @@ class GetGrantDaysRetrieveAPIView(RetrieveAPIView):
       # 基準日(reference_date)は、規定月数が加算されている前提なので、通算月数を算出するために規定月数を減算した日付をもとに計算する
       HALF_YEAR_MONTH = int(grantRule['sectionMonth'][0])
       total_service = None
-      total_service_months = Utils.get_service_years(Utils.sub_month(user_details_obj.reference_date, HALF_YEAR_MONTH), date_now)
+      total_service_months = Utils.get_affiliation_period(Utils.sub_month(reference_date_time, HALF_YEAR_MONTH), date_now)
       if total_service_months[1] >= 0:
         total_service = str(total_service_months[0]) + '年' + str(total_service_months[2]) + 'ヶ月' + '（' + str(total_service_months[1]) + '）'
 
@@ -502,7 +504,7 @@ class ChangePasswordAPIView(APIView):
 # ユーザ情報オブジェクト作成
 # 注意：serializerから返却されるのは更新後のインスタンス情報なので、フォーマット等が異なる場合がある
 # ex) 日付更新リクエスト後のserializerではリクエストにはタイムゾーンが存在していない場合がある
-def createUserInfoObj(user_details, reference_date_separator):
+def createUserInfoObj(user_details, date_separator):
   return {
     'id': user_details.user.id,
     'userId': user_details.user.user_id,
@@ -510,8 +512,12 @@ def createUserInfoObj(user_details, reference_date_separator):
     'status': user_details.user.status,
     'firstName': user_details.first_name,
     'lastName': user_details.last_name,
+    'firstNameKana': user_details.first_name_kana,
+    'lastNameKana': user_details.last_name_kana,
+    'dateOfBirth': user_details.date_of_birth if date_separator is None else user_details.date_of_birth.strftime(f'%Y{date_separator}%m{date_separator}%d'),
     'auth': user_details.auth,
-    'referenceDate': user_details.reference_date if reference_date_separator is None else user_details.reference_date.strftime(f'%Y{reference_date_separator}%m{reference_date_separator}%d'),
+    'joiningDate': user_details.joining_date if date_separator is None else user_details.joining_date.strftime(f'%Y{date_separator}%m{date_separator}%d'),
+    'referenceDate': user_details.reference_date if date_separator is None else user_details.reference_date.strftime(f'%Y{date_separator}%m{date_separator}%d'),
     'workingDays': user_details.working_days,
     'totalDeleteDays': user_details.total_delete_days,
     'totalAddDays': user_details.total_add_days,

@@ -36,7 +36,7 @@ class ExcelReportWithOpenpyxl:
   tag_period = '%period%'
   tag_memo = '%memo%'
 
-  def write(outputData, careerInfoItemDic, userInfo, temp_dir_path):
+  def write(output_data, career_item_dic, user_details, temp_dir_path):
     output_date = Utils.get_now_to_datetime()
 
     # テンプレートファイルを読み込む
@@ -70,16 +70,16 @@ class ExcelReportWithOpenpyxl:
           if tag == ExcelReportWithOpenpyxl.tag_ud_date:
             text = output_date.strftime('%Y年%m月%d日')
           elif tag == ExcelReportWithOpenpyxl.tag_name_kana:
-            text = userInfo.last_name_kana + '  ' + userInfo.first_name_kana
+            text = user_details.last_name_kana + '  ' + user_details.first_name_kana
           elif tag == ExcelReportWithOpenpyxl.tag_name:
-            text = userInfo.last_name + '  ' + userInfo.first_name
+            text = user_details.last_name + '  ' + user_details.first_name
           elif tag == ExcelReportWithOpenpyxl.tag_birthday:
-            text = userInfo.birthday.strftime('%Y年%m月%d日')
+            text = user_details.date_of_birth.strftime('%Y年%m月%d日')
           elif tag == ExcelReportWithOpenpyxl.tag_age:
-            text = Utils.getAge(userInfo.birthday)
+            text = Utils.get_age(user_details.date_of_birth)
           elif tag == ExcelReportWithOpenpyxl.tag_row_start:
-            if len(outputData) > row_index: 
-              current_data = outputData[row_index]
+            if len(output_data) > row_index: 
+              current_data = output_data[row_index]
           elif tag == ExcelReportWithOpenpyxl.tag_row_end:
             row_index += 1
             current_data = None
@@ -87,7 +87,7 @@ class ExcelReportWithOpenpyxl:
             text = str(row_index + 1)
 
           if(text is None):
-            row_output_data = ExcelReportWithOpenpyxl.getRowOutputData(tag, current_data, careerInfoItemDic)
+            row_output_data = ExcelReportWithOpenpyxl.getRowOutputData(tag, current_data, career_item_dic)
             text = row_output_data
 
           if text:
@@ -97,7 +97,7 @@ class ExcelReportWithOpenpyxl:
             # タグがNoneでも空でもない および テキストがNoneまたは空文字の場合
             cell.value = ''
 
-    file_name = 'スキル表_{0}_{1}.xlsx'.format(userInfo.last_name + userInfo.first_name, output_date.strftime("%Y%m%d"))
+    file_name = 'スキル表_{0}_{1}.xlsx'.format(user_details.last_name + user_details.first_name, output_date.strftime("%Y%m%d"))
     workbook.save('{0}/{1}'.format(temp_dir_path, file_name))
     workbook.close()
 
@@ -179,14 +179,14 @@ class ExcelReportWithOpenpyxl:
         elif tag == ExcelReportWithOpenpyxl.tag_overview:
           text = data.overview
         elif tag == ExcelReportWithOpenpyxl.tag_model:
-          text = careerInfoItemDic[dic_key][CareerItemKey.MODEL]
+          text = careerInfoItemDic[dic_key][CareerItemKey.MODEL.value]
         elif tag == ExcelReportWithOpenpyxl.tag_os:
-          text = careerInfoItemDic[dic_key][CareerItemKey.OS]
+          text = careerInfoItemDic[dic_key][CareerItemKey.OS.value]
         elif tag == ExcelReportWithOpenpyxl.tag_db:
-          text = careerInfoItemDic[dic_key][CareerItemKey.DATA_BASE]
+          text = careerInfoItemDic[dic_key][CareerItemKey.DATA_BASE.value]
         elif tag == ExcelReportWithOpenpyxl.tag_lang_tool:
-          language = careerInfoItemDic[dic_key][CareerItemKey.LANGUAGE]
-          tool = careerInfoItemDic[dic_key][CareerItemKey.TOOL]
+          language = careerInfoItemDic[dic_key][CareerItemKey.LANGUAGE.value]
+          tool = careerInfoItemDic[dic_key][CareerItemKey.TOOL.value]
           if(language is not None and tool is None):
             text = language
           elif(language is None and tool is not None):
@@ -194,27 +194,27 @@ class ExcelReportWithOpenpyxl:
           elif(language is not None and tool is not None):
             text = language + '\n' + tool
         elif tag == ExcelReportWithOpenpyxl.tag_cn:
-          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE], 1)
+          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE.value], 1)
         elif tag == ExcelReportWithOpenpyxl.tag_sa:
-          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE], 2)
+          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE.value], 2)
         elif tag == ExcelReportWithOpenpyxl.tag_sd:
-          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE], 3)
+          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE.value], 3)
         elif tag == ExcelReportWithOpenpyxl.tag_pd:
-          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE], 4)
+          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE.value], 4)
         elif tag == ExcelReportWithOpenpyxl.tag_pg:
-          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE], 5)
+          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE.value], 5)
         elif tag == ExcelReportWithOpenpyxl.tag_st:
-          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE], 6)
+          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE.value], 6)
         elif tag == ExcelReportWithOpenpyxl.tag_op:
-          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE], 7)
+          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE.value], 7)
         elif tag == ExcelReportWithOpenpyxl.tag_other:
-          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE], 8)
+          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.INCHARGE.value], 8)
         elif tag == ExcelReportWithOpenpyxl.tag_pm:
-          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.ROLE], 1)
+          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.ROLE.value], 1)
         elif tag == ExcelReportWithOpenpyxl.tag_pl:
-          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.ROLE], 2)
+          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.ROLE.value], 2)
         elif tag == ExcelReportWithOpenpyxl.tag_tl:
-          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.ROLE], 3)
+          text = ExcelReportWithOpenpyxl.getOutputTextFromSelectedData(careerInfoItemDic[dic_key][CareerItemKey.ROLE.value], 3)
         elif tag == ExcelReportWithOpenpyxl.tag_start_date:
           if data.start_date is None:
             return

@@ -4,7 +4,7 @@ from application.views import NotificationRetrieveAPIView, ApplicationMonthListA
 from approval.views import ApproveListAPIView, ApproveAPIView
 from systemsettings.views import SystemConfigsRetrieveAPIView, SystemConfigsDestroyAPIView, ApprovalGroupListAPIView, ApprovalGroupAPIView, ApplicationTypeListAPIView
 from users.views import UserListAPIView, UserDetailsRetrieveAPIView, UserNameListAPIView, UpdateUserAPIView, GetGrantDaysRetrieveAPIView, UpdateGrantDaysAPIView, ChangePasswordAPIView
-from career.views import CareerListAPIView, CareerRetrieveAPIView, CareerDicRetrieveAPIView, SaveCareerAPIView, CareerDestroyAPIView, CareerItemMasterListAPIView, SaveMasterCreateAPIView, CareerMasterDestroyAPIView, CareerOutputAPIView
+from career.views import CareerListAPIView, CareerRetrieveAPIView, CareerDicRetrieveAPIView, SaveCareerAPIView, CareerDestroyAPIView, CareerItemMasterListAPIView, SaveMasterCreateAPIView, CareerMasterDestroyAPIView, CareerUserListAPIView, CareerOutputAPIView
 
 urlpatterns = [
   # ログイン
@@ -69,5 +69,11 @@ urlpatterns = [
   path(r'career/itemMaster/save', SaveMasterCreateAPIView.as_view()),
   # 経歴情報マスタ項目削除（管理者権限あり）
   path(r'career/itemMaster/delete', CareerMasterDestroyAPIView.as_view()),
+  # 保有スキル一覧取得
+  path(r'career/user/list', CareerUserListAPIView.as_view()),
+  # 経歴情報Dictionary取得
+  path(r'career/dictionary', CareerDicRetrieveAPIView.as_view()),
+  # スキルシート出力
+  path(r'career/outputSkillSheet', CareerOutputAPIView.as_view()),
 
 ]

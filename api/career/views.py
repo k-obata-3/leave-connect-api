@@ -1,6 +1,7 @@
 import traceback
 import glob
 import os
+from datetime import datetime, time
 from django.db import transaction
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
@@ -24,9 +25,66 @@ from users.models import User
 from career.models import Career
 from career.models import CareerItem
 from career.models import CareerMaster
+from users.models import User, UserDetails
 
 from career.serializers import CareerSerializer, CareerItemSerializer, CareerMasterSerializer
 import urllib.parse
+
+
+"""
+  保有スキル一覧取得
+
+Raises:
+  exceptions.APIException: _description_
+
+Returns:
+  _type_: _description_
+"""
+class CareerUserListAPIView(ListAPIView):
+  authentication_classes = [JWTAuthentication]
+  permission_classes = []
+
+  def get(self, request):
+    limit = self.request.GET.get('limit')
+    ofset = self.request.GET.get('offset')
+
+    if not limit:
+      raise exceptions.APIException('Invalid Parameter:limit')
+    if not ofset:
+      raise exceptions.APIException('Invalid Parameter:ofset')
+
+    try:
+      date_now = Utils.get_now_to_datetime()
+      total_count = UserDetails.objects.filter(user__company=request.user.company).count()
+      user_details_obj = UserDetails.objects.filter(user__company=request.user.company)[int(ofset):(int(ofset) + int(limit))]
+
+      results = []
+      for user_details in user_details_obj:
+        career_item_obj = CareerItem.objects.filter(career__user=user_details.user, key__in=[CareerItemKey.LANGUAGE.value, CareerItemKey.FRAMEWORK.value, CareerItemKey.DATA_BASE.value]).order_by('key').values_list('value', flat=True)
+        joining_date_time = datetime.combine(user_details.joining_date, time())
+        affiliation_period = Utils.get_affiliation_period(joining_date_time, date_now)
+        results.append({
+          'userId': user_details.user.id,
+          'fullName': user_details.last_name + " " + user_details.first_name,
+          'joiningDate': user_details.joining_date.strftime(f'%Y/%m/%d'),
+          'AffiliationPeriod': affiliation_period[1],
+          'careerItem': list(set(career_item_obj))
+        })
+
+      response = Response()
+      response.status_code = status.HTTP_200_OK
+      response.data = ResponseRenderers.renderList(results, total_count, response.status_code, None)
+    except Exception as e:
+      print('【ERROR】:' + traceback.format_exc())
+      error_message = 'ユーザ一覧情報取得処理中にエラーが発生しました。'
+      if type(e) == exceptions.ValidationError:
+        error_message = e.detail
+      response = Response()
+      response.status_code = status.HTTP_400_BAD_REQUEST
+      response.data = ResponseRenderers.renderList([], 0, response.status_code, error_message)
+    
+    return response
+
 
 """[経歴情報Dictionary取得]
     ユーザIDで経歴情報をDictionaryで取得
@@ -38,18 +96,14 @@ class CareerDicRetrieveAPIView(RetrieveAPIView):
   permission_classes = []
 
   def get(self, request):
-    # 認証情報からユーザと権限を取得
-    login_user = self.request.user
-    company_id = login_user.user.company_id
-
-    user_id = self.request.GET.get('user_id')
+    user_id = self.request.GET.get('userId')
 
     try:
-      career_obj = Career.objects.filter(user = user_id, user__company = company_id)
-      career_item_obj = CareerItem.objects.filter(career__user = user_id).all()
+      career_obj = Career.objects.filter(user__company=request.user.company, user=user_id)
+      career_item_obj = CareerItem.objects.filter(career__user = user_id)
 
       result = {
-        'career_dic': ViewUtil.getCareerDic(career_obj, career_item_obj)
+        'careerDic': ViewUtil.getCareerDic(career_obj, career_item_obj)
       }
 
       response = Response()
@@ -63,12 +117,18 @@ class CareerDicRetrieveAPIView(RetrieveAPIView):
       response = Response()
       response.status_code = status.HTTP_400_BAD_REQUEST
       response.data = ResponseRenderers.render({}, response.status_code, error_message)
+    
+    return response
 
 
-"""[経歴情報一覧取得]
-    ユーザIDで経歴情報を一覧取得
+"""
+  経歴情報一覧取得
+
+Raises:
+  exceptions.APIException: _description_
+
 Returns:
-    [Response]: [リクエストのレスポンス]
+  _type_: _description_
 """
 class CareerListAPIView(ListAPIView):
   authentication_classes = [JWTAuthentication]
@@ -119,10 +179,14 @@ class CareerListAPIView(ListAPIView):
     return response
 
 
-"""[経歴情報取得]
-    経歴情報IDで経歴情報を取得
+"""
+  経歴情報取得
+
+Raises:
+  exceptions.APIException: _description_
+
 Returns:
-    [Response]: [リクエストのレスポンス]
+  _type_: _description_
 """
 class CareerRetrieveAPIView(RetrieveAPIView):
   authentication_classes = [JWTAuthentication]
@@ -339,7 +403,6 @@ class CareerItemMasterListAPIView(ListAPIView):
       tool_list = []
 
       for item in career_master_obj:
-        print(item.value)
         result = {
           'id': item.id,
           'key': item.key,
@@ -442,10 +505,13 @@ class SaveMasterCreateAPIView(CreateAPIView):
     return response
 
 
-"""[マスタ項目情報削除]
-    経歴情報マスタ項目削除
+"""
+  経歴情報マスタ項目削除
+
+Raises:
+
 Returns:
-    [Response]: [リクエストのレスポンス]
+  _type_: _description_
 """
 class CareerMasterDestroyAPIView(DestroyAPIView):
   authentication_classes = [JWTAuthentication]
@@ -474,49 +540,47 @@ class CareerMasterDestroyAPIView(DestroyAPIView):
     return response
 
 
-"""[経歴情報出力処理]
-    ユーザの経歴情報をエクセル出力
+"""
+  スキルシート出力
+
+Raises:
+
 Returns:
-    [Response]: [リクエストのレスポンス]
+  _type_: _description_
 """
 class CareerOutputAPIView(APIView):
   authentication_classes = [JWTAuthentication]
   permission_classes = []
 
   def get(self, request):
-    # 認証情報からユーザと権限を取得
-    login_user = self.request.user
-    is_admin = login_user.is_admin
-    login_user_id = login_user.user.id
-    company_id = login_user.user.company_id
-    user_id = self.request.GET.get('user_id')
-
-    # ログインユーザ自身ではないユーザの経歴情報を出力する場合は、管理者権限チェック
-    # 管理者ではない場合は認証エラー
-    if str(login_user_id) != user_id:
-      if is_admin is not True:
-        msg = "Authorization 無効"
-        raise exceptions.AuthenticationFailed(msg)
+    param_user_id = self.request.GET.get('userId')
 
     try:
-      career_obj = Career.objects.filter(user = user_id, user__company = company_id).all().order_by("start_date")
-      user_obj = User.objects.get(user = user_id, user__company = company_id)
+      if request.user.is_admin is False and str(request.user.id) != param_user_id:
+        raise exceptions.APIException()
+
+      where_params = {
+        'user__company': request.user.company,
+        'user_id': param_user_id
+      }
+      career_obj = Career.objects.filter(**where_params).order_by("start_date")
+      user_details_obj = UserDetails.objects.get(**where_params)
 
       career_item_dic = {}
       for career in career_obj:
         dic = {}
-        for key_name in CareerItemKey.LIST:
+        for key_name in CareerItemKey.KEY_LIST.value:
           values = list(CareerItem.objects.filter(key=key_name, career_id=career.id).values_list('value', flat=True))
           # カンマ区切りで結合
           dic[key_name] = ','.join(values)
         career_item_dic[str(career.id)] = dic
 
       # 前方一致で前回作成したファイルを削除
-      for file in glob.glob(os.getcwd() + '/' + settings.CAREER_SHEET_OUTPUT_DIR_PATH + settings.CAREER_SHEET_PREFIX + user_obj.last_name + user_obj.first_name + '*'):
+      for file in glob.glob(os.getcwd() + '/' + settings.CAREER_SHEET_OUTPUT_DIR_PATH + settings.CAREER_SHEET_PREFIX + user_details_obj.last_name + user_details_obj.first_name + '*'):
         os.remove(file)
 
       # os.makedirs(temp_dir_path, exist_ok=True)
-      file_name = ExcelReportWithOpenpyxl.write(career_obj, career_item_dic, user_obj, settings.CAREER_SHEET_OUTPUT_DIR_PATH)
+      file_name = ExcelReportWithOpenpyxl.write(career_obj, career_item_dic, user_details_obj, settings.CAREER_SHEET_OUTPUT_DIR_PATH)
       quoted_filename = urllib.parse.quote(file_name)
       file = open('{0}/{1}'.format(settings.CAREER_SHEET_OUTPUT_DIR_PATH, file_name), 'rb')
 
@@ -528,121 +592,6 @@ class CareerOutputAPIView(APIView):
     except Exception as e:
       print('【ERROR】:' + traceback.format_exc())
       error_message = '経歴情報取得処理中にエラーが発生しました。'
-      if type(e) == exceptions.ValidationError:
-        error_message = e.detail
-      response = Response()
-      response.status_code = status.HTTP_400_BAD_REQUEST
-      response.data = ResponseRenderers.render({}, response.status_code, error_message)
-
-    return response
-
-
-"""[経歴情報一覧取得]
-    会社IDで経歴情報を一覧取得
-Returns:
-    [Response]: [リクエストのレスポンス]
-"""
-class CareerAllListAPIView(ListAPIView):
-  authentication_classes = [JWTAuthentication]
-  permission_classes = []
-
-  def get(self, request):
-    # 認証情報からユーザと権限を取得
-    login_user = self.request.user
-    company_id = login_user.user.company_id
-
-    try:
-      career_obj = Career.objects.filter(user__company = company_id, user__state = 1).all()
-      career_item_obj = CareerItem.objects.filter(career__user__company = company_id, career__user__state = 1).all()
-
-      db_dic = {}
-      lang_dic = {}
-      framework_dic = {}
-      for career in career_obj:
-        if(career.start_date is not None and career.end_date is not None):
-          period_days = abs(career.start_date - career.end_date)
-          db_dic = ViewUtil.getCareerItemPointDic(CareerItemKey.DATA_BASE, db_dic, career, career_item_obj, period_days)
-          lang_dic = ViewUtil.getCareerItemPointDic(CareerItemKey.LANGUAGE, lang_dic, career, career_item_obj, period_days)
-          framework_dic = ViewUtil.getCareerItemPointDic(CareerItemKey.FRAMEWORK, framework_dic, career, career_item_obj, period_days)
-
-      for key, value in db_dic.items():
-        db_dic[key] = value
-
-      for key, value in lang_dic.items():
-        lang_dic[key] = value
-
-      for key, value in framework_dic.items():
-        framework_dic[key] = value
-
-      # 期間（日）で降順ソート
-      db_list = sorted(db_dic.items(), key = lambda item: item[1], reverse = True)
-      db_dic.clear()
-      db_dic.update(db_list)
-
-      lang_list = sorted(lang_dic.items(), key = lambda item: item[1], reverse = True)
-      lang_dic.clear()
-      lang_dic.update(lang_list)
-
-      framework_list = sorted(framework_dic.items(), key = lambda item: item[1], reverse = True)
-      framework_dic.clear()
-      framework_dic.update(framework_list)
-
-      result = {
-          'career_db': str(db_dic),
-          'career_lang': str(lang_dic),
-          'career_framework': str(framework_dic),
-      }
-
-      response = Response()
-      response.status_code = status.HTTP_200_OK
-      response.data = ResponseRenderers.render({}, response.status_code, None)
-    except Exception as e:
-      print('【ERROR】:' + traceback.format_exc())
-      error_message = '経歴情報取得処理中にエラーが発生しました。'
-      if type(e) == exceptions.ValidationError:
-        error_message = e.detail
-      response = Response()
-      response.status_code = status.HTTP_400_BAD_REQUEST
-      response.data = ResponseRenderers.render({}, response.status_code, error_message)
-
-    return response
-
-
-"""[マスタ項目情報一覧取得]
-    会社IDでマスタ項目情報を一覧取得
-Returns:
-    [Response]: [リクエストのレスポンス]
-"""
-class CareerMasterListAPIView(ListAPIView):
-  authentication_classes = [JWTAuthentication]
-  permission_classes = []
-
-  def get(self, request):
-    # 認証情報からユーザと権限を取得
-    login_user = self.request.user
-    company_id = login_user.user.company_id
-
-    try:
-      key_list = CareerItemKey.KEY_LIST
-      dic = {}
-      for key_name in key_list:
-        dic[key_name] = CareerMaster.objects.filter(company = company_id, key = key_name).values_list('value', flat=True)
-
-      result = {
-        CareerItemKey.MODEL: dic[CareerItemKey.MODEL],
-        CareerItemKey.OS: dic[CareerItemKey.OS],
-        CareerItemKey.TOOL: dic[CareerItemKey.TOOL],
-        CareerItemKey.DATA_BASE: dic[CareerItemKey.DATA_BASE],
-        CareerItemKey.LANGUAGE: dic[CareerItemKey.LANGUAGE],
-        CareerItemKey.FRAMEWORK: dic[CareerItemKey.FRAMEWORK],
-      }
-
-      response = Response()
-      response.status_code = status.HTTP_200_OK
-      response.data = ResponseRenderers.render(result, response.status_code, None)
-    except Exception as e:
-      print('【ERROR】:' + traceback.format_exc())
-      error_message = '経歴情報マスタ取得処理中にエラーが発生しました。'
       if type(e) == exceptions.ValidationError:
         error_message = e.detail
       response = Response()
@@ -704,22 +653,25 @@ class ViewUtil():
     db_dic = {}
     lang_dic = {}
     framework_dic = {}
+    tool_dic = {}
     for career in career_obj:
       if(career.start_date is None or career.end_date is None):
         continue
-      period_days = abs(career.start_date - career.end_date)
-      db_dic = ViewUtil.getCareerItemDic(CareerItemKey.DATA_BASE, db_dic, career, career_item_obj, period_days)
-      lang_dic = ViewUtil.getCareerItemDic(CareerItemKey.LANGUAGE, lang_dic, career, career_item_obj, period_days)
-      framework_dic = ViewUtil.getCareerItemDic(CareerItemKey.FRAMEWORK, framework_dic, career, career_item_obj, period_days)
+      period_Month = Utils.get_affiliation_period(Utils.sub_day(career.start_date, 1), career.end_date)
+      db_dic = ViewUtil.getCareerItemDic(CareerItemKey.DATA_BASE.value, db_dic, career, career_item_obj, int(period_Month[1]))
+      lang_dic = ViewUtil.getCareerItemDic(CareerItemKey.LANGUAGE.value, lang_dic, career, career_item_obj, int(period_Month[1]))
+      framework_dic = ViewUtil.getCareerItemDic(CareerItemKey.FRAMEWORK.value, framework_dic, career, career_item_obj, int(period_Month[1]))
+      tool_dic = ViewUtil.getCareerItemDic(CareerItemKey.TOOL.value, tool_dic, career, career_item_obj, int(period_Month[1]))
 
     for key, value in db_dic.items():
-      db_dic[key] = value.days
-
+      db_dic[key] = value
     for key, value in lang_dic.items():
-      lang_dic[key] = value.days
-
+      lang_dic[key] = value
     for key, value in framework_dic.items():
-      framework_dic[key] = value.days
+      framework_dic[key] = value
+    for key, value in tool_dic.items():
+      tool_dic[key] = value
+
 
     # 期間（日）で降順ソート
     db_list = sorted(db_dic.items(), key = lambda item: item[1], reverse = True)
@@ -734,8 +686,13 @@ class ViewUtil():
     framework_dic.clear()
     framework_dic.update(framework_list)
 
+    tool_list = sorted(tool_dic.items(), key = lambda item: item[1], reverse = True)
+    tool_dic.clear()
+    tool_dic.update(tool_list)
+
     return {
-      'career_db': str(db_dic),
-      'career_lang': str(lang_dic),
-      'career_framework': str(framework_dic),
+      'careerDb': db_dic,
+      'careerLang': lang_dic,
+      'careerFramework': framework_dic,
+      'careerTool': tool_dic,
     }

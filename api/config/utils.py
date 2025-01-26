@@ -34,8 +34,8 @@ class Utils():
     raw = password + settings.PASS_SECRET_SALT + str(user.company.id) + str(user.id)
     return hashlib.sha1(raw.encode()).hexdigest()
 
-  # 経過年数取得(初日を含まない)
-  def get_service_years(dt1, dt2):
+  # 経過期間取得(初日を含まない)
+  def get_affiliation_period(dt1, dt2):
     mmod = monthmod(dt1, dt2)
     return (mmod[0].months//12, mmod[0].months, mmod[0].months%12)
 
@@ -131,3 +131,12 @@ class Utils():
             return ac['name']
 
     return ''
+
+  def get_age(date_of_birth):
+    date_now = Utils.getNow()
+    this_birthday = datetime.datetime(date_now.year, date_of_birth.month, date_of_birth.day)
+    age = date_now.year - date_of_birth.year
+    if(date_now < this_birthday):
+      return str(age -1)
+
+    return str(age)
